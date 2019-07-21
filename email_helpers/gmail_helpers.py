@@ -17,6 +17,7 @@ from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -204,17 +205,21 @@ def encode_attachment_for_email(attachment_filename):
     # Guess Encoding
     content_type, encoding = mimetypes.guess_type(attachment_filename)
     if content_type is None or encoding is not None:
-        content_type = 'application/octet-stream'
-    main_type, sub_type = content_type.split('/', 1)
+        content_type = "application/octet-stream"
+    if attachment_filename.endswith(".xlsx"):
+        content_type = "application/vnd-xls"
+    main_type, sub_type = content_type.split("/")
 
     # Prepage Attachment
-    with open(attachment_filename, 'rb') as attachment_file_obj:
-        if main_type == 'text':
+    with open(attachment_filename, "rb") as attachment_file_obj:
+        if main_type == "text":
             attachment = MIMEText(attachment_file_obj.read(), _subtype=sub_type)
-        elif main_type == 'image':
+        elif main_type == "image":
             attachment = MIMEImage(attachment_file_obj.read(), _subtype=sub_type)
-        elif main_type == 'audio':
+        elif main_type == "audio":
             attachment = MIMEAudio(attachment_file_obj.read(), _subtype=sub_type)
+        elif sub_type == "vnd-xls":
+            attachment = MIMEApplication(attachment_file_obj.read(), _subtype=sub_type)
         else:
             attachment = MIMEBase(main_type, sub_type)
             attachment.set_payload(attachment_file_obj.read())
